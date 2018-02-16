@@ -26,9 +26,9 @@ int libuv_process_spawn(LibuvProcess *uvproc)
   uvproc->uvopts.file = proc->argv[0];
   uvproc->uvopts.args = proc->argv;
   uvproc->uvopts.flags = UV_PROCESS_WINDOWS_HIDE;
-  if (proc->detach) {
-      uvproc->uvopts.flags |= UV_PROCESS_DETACHED;
-  }
+  // "UV_PROCESS_DETACHED is sugar for setsid(2)".
+  // https://github.com/nodejs/node/issues/3596
+  uvproc->uvopts.flags |= UV_PROCESS_DETACHED;
 #ifdef WIN32
   // libuv collapses the argv to a CommandLineToArgvW()-style string. cmd.exe
   // expects a different syntax (must be prepared by the caller before now).

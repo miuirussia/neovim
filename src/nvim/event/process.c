@@ -215,8 +215,9 @@ void process_stop(Process *proc) FUNC_ATTR_NONNULL_ALL
       // stdout/stderr, they will be closed when it exits(possibly due to being
       // terminated after a timeout)
       stream_may_close(&proc->in);
-      ILOG("Sending SIGTERM to pid %d", proc->pid);
-      uv_kill(proc->pid, SIGTERM);
+      int pid = -getpgid(proc->pid);
+      ILOG("Sending SIGTERM to pid %d", pid);
+      uv_kill(pid, SIGTERM);
       break;
     case kProcessTypePty:
       // close all streams for pty processes to send SIGHUP to the process
@@ -249,15 +250,15 @@ static void children_kill_cb(uv_timer_t *handle)
     if (!proc->stopped_time) {
       continue;
     }
+    int pid = -getpgid(proc->pid);
     uint64_t elapsed = (now - proc->stopped_time) / 1000000 + 1;
 
     if (elapsed >= KILL_TIMEOUT_MS) {
       int sig = proc->type == kProcessTypePty && elapsed < KILL_TIMEOUT_MS * 2
                     ? SIGTERM
                     : SIGKILL;
-      ILOG("Sending %s to pid %d", sig == SIGTERM ? "SIGTERM" : "SIGKILL",
-           proc->pid);
-      uv_kill(proc->pid, sig);
+      ILOG("sending %s to pid %d", sig == SIGTERM ? "SIGTERM" : "SIGKILL", pid);
+      uv_kill(pid, sig);
     }
   }
 }
